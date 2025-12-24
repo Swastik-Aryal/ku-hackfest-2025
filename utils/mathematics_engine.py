@@ -1,8 +1,8 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-class PhysicsLlmEngine:
-    def __init__(self, model_name="benhaotang/llama3.2-1B-physics-finetuned"):
+class MathsLlmEngine:
+    def __init__(self, model_name="Zak587/MathSageFR-DeepSeek-R1-Distill-Qwen-1.5B"):
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name, torch_dtype="auto", device_map="auto"
         )
@@ -54,10 +54,11 @@ class PhysicsLlmEngine:
 
 # Usage
 if __name__ == "__main__":
-    generator = PhysicsLlmEngine()
+    generator = MathsLlmEngine()
 
 # Maintains conversation context
-    response1 = generator.generate("What isSimple harmonic motion.")
+    response1 = generator.generate(
+        "Convert the cartesian coordinate (x,y)=(2,4) to polar coordinates")
     print(response1)
 # response2 = generator.generate("Now make it rotate.")  # References previous context
 # print(response2)
