@@ -1,0 +1,12 @@
+{
+  "responses": [
+    {
+      "question": "explain fourier series to me",
+      "response": {
+        "explanation_needed": true,
+        "visualization_needed": true,
+        "manim_prompt": "Create a Manim animation explaining the Fourier Series. Start by showing a square wave. Then, demonstrate how it can be approximated by summing sine waves. Begin with a single fundamental sine wave, then add the 3rd harmonic, then the 5th, and so on. Show the resulting curve becoming more 'square' with each added term. On the side or below, use a 'rotating vectors' (epicycles) representation where circles are attached to each other's tips to trace out the function. Include labels for 'n=1', 'n=3', 'n=5' to show the increasing complexity."
+      }
+    }
+  ]
+}

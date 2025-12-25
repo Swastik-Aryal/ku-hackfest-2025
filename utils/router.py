@@ -11,26 +11,6 @@ from google.genai import types
 class AcademicQuestionRouter:
     """Routes and processes academic questions using Gemini API."""
 
-    ROUTING_SCHEMA = {
-        "domain": ["math", "physics"],
-        "sub_domain": [
-            "mechanics",
-            "electromagnetism",
-            "thermodynamics",
-            "quantum",
-            "optics",
-            "waves",
-            "calculus",
-            "algebra",
-            "statistics",
-            "linear_algebra",
-            "differential_equations",
-            "geometry",
-        ],
-        "solver_needed": ["symbolic", "numeric", "logical"],
-        "visualization_tool": ["manim", None],
-    }
-
     def __init__(
         self,
         model_name: str = "gemini-3-flash-preview",
@@ -40,116 +20,64 @@ class AcademicQuestionRouter:
         self.client = genai.Client()
         self.model_name = model_name
         self.data_filepath = Path(data_filepath)
-        self.last_route: Optional[Dict[str, Any]] = None
 
-        if not self.data_filepath.exists():
-            self._initialize_data_file()
+        self._initialize_data_file()
 
-    def classify_question(self, question: str) -> Dict[str, Any]:
-        """Classify an academic question and determine if visualization is needed."""
-        prompt = self._build_classification_prompt()
-
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            config=types.GenerateContentConfig(system_instruction=prompt),
-            contents=question,
-        )
-
-        classification = self._parse_json_response(response.text)
-        self.last_route = classification
-
-        # Save the question and classification
-        self._save_interaction(
-            {"type": "classification", "question": question, "response": classification}
-        )
-
-        return classification
-
-    def handle_followup(self, followup_question: str) -> Dict[str, Any]:
-        """Handle follow-up questions based on previous classification and full conversation history."""
-        if not self.last_route:
-            raise ValueError(
-                "No previous classification found. Call classify_question() first."
-            )
-
+    def handle_prompt(self, user_prompt: str) -> Dict[str, Any]:
+        """Handle any user prompt with full conversation context."""
         # Load conversation history
         conversation_history = self._load_conversation_history()
 
-        prompt = self._build_followup_prompt(conversation_history)
+        prompt = self._build_prompt(conversation_history)
 
         response = self.client.models.generate_content(
             model=self.model_name,
             config=types.GenerateContentConfig(system_instruction=prompt),
-            contents=followup_question,
+            contents=user_prompt,
         )
 
-        followup_response = self._parse_json_response(response.text)
+        parsed_response = self._parse_json_response(response.text)
 
-        # Save the follow-up interaction
-        self._save_interaction(
-            {
-                "type": "followup",
-                "question": followup_question,
-                "response": followup_response,
-            }
+        final_reposnse = {
+            "question": user_prompt,
+            "response": parsed_response,
+        }
+
+        # Save the interaction
+        self._save_interaction(final_reposnse)
+
+        return final_reposnse
+
+    def _build_prompt(self, conversation_history: List[Dict[str, Any]]) -> str:
+        """Build the system prompt with full conversation context."""
+        history_text = (
+            json.dumps(conversation_history, indent=2)
+            if conversation_history
+            else "No previous conversation."
         )
 
-        return followup_response
+        return f"""You are an academic assistant that processes questions and requests.
 
-    def _build_classification_prompt(self) -> str:
-        """Build the system prompt for question classification."""
-        return """You are a router that classifies academic questions.
+CONVERSATION HISTORY:
+{history_text}
+
 Return EXACTLY one valid JSON object and nothing else — no markdown, no code fences, no explanation.
 
 Schema you must follow:
-{
-  "domain": "math" | "physics",
-  "sub_domain": "mechanics" | "electromagnetism" | "thermodynamics" | "quantum" | "optics" | "waves" | "calculus" | "algebra" | "statistics" | "linear_algebra" | "differential_equations" | "geometry",
-  "solver_needed": "symbolic" | "numeric" | "logical",
-  "visualization_needed": true | false,
-  "visualization_tool": "manim" | null,
-  "manim_prompt": string | null
-}
-
-Rules:
-- Set "domain" and "sub_domain" based on the question.
-- "solver_needed" must describe the type of reasoning required to solve the problem.
-- If "visualization_needed" is true, then:
-    - "visualization_tool" must be "manim"
-    - "manim_prompt" must contain a detailed Manim scene prompt optimized for an AI animation generator.
-- If "visualization_needed" is false, set:
-    - "visualization_tool": null
-    - "manim_prompt": null
-- JSON must be syntactically correct and complete.
-
-Now classify the question."""
-
-    def _build_followup_prompt(self, conversation_history: List[Dict[str, Any]]) -> str:
-        """Build the system prompt for follow-up handling with full conversation context."""
-        history_text = json.dumps(conversation_history, indent=2)
-
-        return f"""You are an academic assistant handling a follow-up request.
-
-FULL CONVERSATION HISTORY:
-{history_text}
-
-The user's new message is a follow-up. Use the entire conversation context to understand what they're referring to.
-Return EXACTLY one valid JSON object and nothing else.
-
-Respond in this schema:
-{{
-  "action": "solve" | "visualize" | "reclassify",
-  "solver_model": string | null,
-  "manim_prompt": string | null,
-  "context_summary": string
+{{"explanation_needed": true | false,
+    "visualization_needed": true | false,
+    "manim_prompt": string | null
 }}
 
 Rules:
-- If the user is asking to solve the problem, set action="solve" and provide solver_model.
-- If the user asks for animation/diagram/visual output, set action="visualize" and provide manim_prompt.
-- If the user asks a completely new academic question, set action="reclassify".
-- Always provide a brief context_summary explaining what the user is referring to based on history.
-- If not needed, keep fields null."""
+- Set "explanation_needed" to true if the user is asking for an explanation or clarification or general question. Otherwise, set it to false.
+- Set "visualization_needed" to true if the user is requesting a visualization or animation or change in animation . Otherwise, set it to false.
+- Set both fields to true if both are requested or the explanation can be enhanced with a visualization. 
+- If "visualization_needed" is true, then:
+    - "manim_prompt" must contain a detailed Manim scene prompt optimized for an AI animation generator.
+- If "visualization_needed" is false, set:
+    - "manim_prompt": null
+- JSON must be syntactically correct and complete."""
 
     def _load_conversation_history(self) -> List[Dict[str, Any]]:
         """Load the conversation history from the data file."""
@@ -184,7 +112,6 @@ Rules:
     def clear_history(self) -> None:
         """Clear the conversation history."""
         self._initialize_data_file()
-        self.last_route = None
 
 
 def main():
@@ -194,26 +121,26 @@ def main():
     # Clear any previous history
     router.clear_history()
 
-    # Classify initial question
+    # Handle initial question
     question = (
         "Show how two coherent waves interfere to form a moving interference pattern, "
         "and explain how nodal and antinodal lines emerge."
     )
 
-    print("=== Initial Classification ===")
-    classification = router.classify_question(question)
-    print(json.dumps(classification, indent=2))
+    print("=== Initial Question ===")
+    response = router.handle_prompt(question)
+    print(json.dumps(response, indent=2))
 
-    # Handle follow-up with full context
+    # Handle follow-up
     print("\n=== Follow-up Question ===")
     followup = "What are we talking about?"
-    followup_response = router.handle_followup(followup)
+    followup_response = router.handle_prompt(followup)
     print(json.dumps(followup_response, indent=2))
 
     # Another follow-up
     print("\n=== Another Follow-up ===")
     followup2 = "Can you visualize this with an animation?"
-    followup_response2 = router.handle_followup(followup2)
+    followup_response2 = router.handle_prompt(followup2)
     print(json.dumps(followup_response2, indent=2))
 
 

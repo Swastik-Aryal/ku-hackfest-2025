@@ -1,0 +1,28 @@
+{
+  "responses": [
+    {
+      "question": "Show how two coherent waves interfere to form a moving interference pattern, and explain how nodal and antinodal lines emerge.",
+      "response": {
+        "explanation_needed": true,
+        "visualization_needed": true,
+        "manim_prompt": "Create a 2D animation showing two coherent point sources emitting circular waves that interfere. The scene should start with two dots (Source A and Source B) separated by a small distance. Concentric circles representing wave crests and troughs should expand outward from both sources simultaneously. Use a color gradient (e.g., blue for positive displacement, red for negative displacement, and black for zero displacement) to show the resulting interference pattern. Explicitly highlight the 'nodal lines' where the waves consistently cancel out (zero amplitude) and 'antinodal lines' where the waves constructively interfere (maximum oscillation). Add labels pointing to these lines as they form. Ensure the waves are moving continuously to show the dynamic nature of the interference pattern."
+      }
+    },
+    {
+      "question": "What are we talking about?",
+      "response": {
+        "explanation_needed": true,
+        "visualization_needed": false,
+        "manim_prompt": null
+      }
+    },
+    {
+      "question": "Can you visualize this with an animation?",
+      "response": {
+        "explanation_needed": true,
+        "visualization_needed": true,
+        "manim_prompt": "Create a 2D simulation of a ripple tank interference pattern. Place two point sources side-by-side. From each source, animate concentric circles radiating outwards representing the crests and troughs of coherent waves. Use a dynamic color map where the superposition of waves is displayed: bright colors (white/cyan) for constructive interference (antinodal regions) and dark/black regions for destructive interference (nodal regions). As the waves propagate, draw dashed lines along the paths of destructive interference to clearly mark the 'nodal lines' and solid lines for 'antinodal lines'. Add a title 'Interference of Coherent Waves' and labels for 'Source 1' and 'Source 2'. Ensure the waves cycle smoothly to show the steady-state pattern."
+      }
+    }
+  ]
+}
