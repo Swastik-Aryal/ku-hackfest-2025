@@ -15,6 +15,7 @@ Physics questions are handled by a model trained specifically on physics concept
 Mathematics questions are handled by a separate model trained on mathematical reasoning and symbolic problem solving.
 
 These models focus on step-by-step explanations, assumptions, and alternative solution paths rather than just final answers.
+![image](./images/feynmanarch.webp)
 
 # Automatic Visualization (When Needed)
 
